@@ -1,0 +1,33 @@
+name: RTX 3090 UEFI probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [windows/rtx3090-zenith-ii]
+    paths: ['windows/**', '.github/workflows/windows-3090-probe.yml']
+  pull_request:
+    paths: ['windows/**', '.github/workflows/windows-3090-probe.yml']
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: craftingmod/rtx30-unlock
+          ref: 5c076dc4ee7fa369639669fa591ac74d8f6dfcd8
+          path: reference
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.0'
+      - name: Install compiler
+        run: sudo apt-get update && sudo apt-get install -y clang lld
+      - name: Test, build and package diagnostic only
+        run: python3 windows/rtx3090/build_probe.py --reference reference --output probe-usb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rtx3090-readonly-probe
+          path: probe-usb/
+          if-no-files-found: error
